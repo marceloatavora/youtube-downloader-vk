@@ -1,18 +1,309 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>YouTube Downloader</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader VK</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .youtube-icon {
+            font-size: 3em;
+            color: #ff0000;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .url-input, .select-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .url-input:focus, .select-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .select-input {
+            background: white;
+            cursor: pointer;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            color: #666;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h2>VK YouTube Downloader</h2>
-  <form action="/download" method="post">
-    <input type="text" name="url" placeholder="Cole o link do YouTube aqui" required>
-    <select name="format">
-      <option value="mp3">Áudio (MP3)</option>
-      <option value="video">Vídeo (HD)</option>
-      <option value="transcript">Transcrição</option>
-    </select>
-    <button type="submit">Baixar</button>
-  </form>
+    <div class="container">
+        <div class="header">
+            <div class="youtube-icon">📺</div>
+            <h1>YouTube Downloader VK</h1>
+            <p>Baixe vídeos, áudios e transcrições do YouTube</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="info-box">
+            <h3>Como usar:</h3>
+            <ul>
+                <li>Cole a URL do vídeo do YouTube</li>
+                <li>Escolha o tipo de download desejado</li>
+                <li>Clique em "Baixar" e aguarde</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="/download" id="downloadForm">
+            <div class="form-group">
+                <label for="url">Cole o link do vídeo:</label>
+                <input 
+                    type="url" 
+                    id="url" 
+                    name="url" 
+                    class="url-input" 
+                    placeholder="https://www.youtube.com/watch?v=..." 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="download_type">O que você deseja baixar?</label>
+                <select id="download_type" name="download_type" class="select-input" required>
+                    <option value="audio">🎵 Áudio (.mp3)</option>
+                    <option value="video">🎥 Vídeo (Full HD)</option>
+                    <option value="transcript">📝 Transcrição (.txt)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="download-btn">
+                Baixar
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processando seu download...</p>
+        </div>
+
+        <div class="footer">
+            <p>⚠️ Use apenas para conteúdo que você tem direito de baixar</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', function(e) {
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            
+            // Desabilitar botão para evitar múltiplos cliques
+            const submitBtn = document.querySelector('.download-btn');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.textContent = 'Processando...';
+            
+            // Validar URL
+            const urlInput = document.getElementById('url');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                e.preventDefault();
+                alert('Por favor, insira uma URL válida.');
+                resetForm();
+                return;
+            }
+            
+            // Validar se é URL do YouTube
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+            if (!youtubeRegex.test(url)) {
+                e.preventDefault();
+                alert('Por favor, insira uma URL válida do YouTube.');
+                resetForm();
+                return;
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('loading').style.display = 'none';
+            const submitBtn = document.querySelector('.download-btn');
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.textContent = 'Baixar';
+        }
+
+        // Reset form se a página carregar novamente (após erro)
+        window.addEventListener('load', function() {
+            resetForm();
+        });
+    </script>
 </body>
 </html>
