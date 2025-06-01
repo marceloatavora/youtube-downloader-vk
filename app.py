@@ -30,8 +30,7 @@ def baixar_transcricao(url):
         transcricao = YouTubeTranscriptApi.get_transcript(video_id, languages=['pt', 'en'])
         with open(path, "w", encoding="utf-8") as f:
             for item in transcricao:
-                f.write(f"{item['text']}
-")
+                f.write(f"{item['text']}\n")
         return path
     except (TranscriptsDisabled, NoTranscriptFound):
         return None
