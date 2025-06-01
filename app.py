@@ -1,67 +1,58 @@
-import os
-import uuid
-import subprocess
 from flask import Flask, render_template, request, send_file
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+import os
+import yt_dlp
+from youtube_transcript_api import YouTubeTranscriptApi
+from tempfile import NamedTemporaryFile
 
 app = Flask(__name__)
-DOWNLOAD_DIR = "downloads"
 
-def baixar_audio(url):
-    nome = f"audio_{uuid.uuid4().hex[:8]}.mp3"
-    path = os.path.join(DOWNLOAD_DIR, nome)
-    comando = ["yt-dlp", "-x", "--audio-format", "mp3", "-o", path, url]
-    subprocess.run(comando)
-    return path
-
-def baixar_video(url, full_hd=False):
-    nome = f"video_{uuid.uuid4().hex[:8]}.mp4"
-    path = os.path.join(DOWNLOAD_DIR, nome)
-    formato = "bv*[height<=1080]+ba" if full_hd else "bestvideo+bestaudio"
-    comando = ["yt-dlp", "-f", formato, "--merge-output-format", "mp4", "-o", path, url]
-    subprocess.run(comando)
-    return path
-
-def baixar_transcricao(url):
-    video_id = url.split("v=")[-1][:11]
-    nome = f"transcricao_{uuid.uuid4().hex[:8]}.txt"
-    path = os.path.join(DOWNLOAD_DIR, nome)
-    try:
-        transcricao = YouTubeTranscriptApi.get_transcript(video_id, languages=['pt', 'en'])
-        with open(path, "w", encoding="utf-8") as f:
-            for item in transcricao:
-                f.write(f"{item['text']}\n")
-        return path
-    except (TranscriptsDisabled, NoTranscriptFound):
-        return None
-
-@app.route("/", methods=["GET", "POST"])
+@app.route('/')
 def index():
-    if request.method == "POST":
-        url = request.form["url"]
-        acao = request.form["action"]
+    return render_template('index.html')
 
-        if acao == "mp3":
-            path = baixar_audio(url)
-            return send_file(path, as_attachment=True)
+@app.route('/download', methods=['POST'])
+def download():
+    url = request.form['url']
+    format_type = request.form['format']
 
-        elif acao == "hd":
-            path = baixar_video(url, full_hd=True)
-            return send_file(path, as_attachment=True)
+    try:
+        ydl_opts = {}
 
-        elif acao == "max":
-            path = baixar_video(url, full_hd=False)
-            return send_file(path, as_attachment=True)
+        if format_type == 'mp3':
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': 'audio.%(ext)s'
+            }
 
-        elif acao == "transcript":
-            path = baixar_transcricao(url)
-            if path:
-                return send_file(path, as_attachment=True)
-            else:
-                return "❌ Este vídeo não possui transcrição disponível."
+        elif format_type == 'video':
+            ydl_opts = {
+                'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]',
+                'outtmpl': 'video.mp4',
+                'merge_output_format': 'mp4'
+            }
 
-    return render_template("index.html")
+        elif format_type == 'transcript':
+            video_id = url.split("v=")[-1].split("&")[0]
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            file = NamedTemporaryFile(delete=False, mode='w+', suffix=".txt")
+            for item in transcript:
+                file.write(f"{item['text']}\n")
+            file.close()
+            return send_file(file.name, as_attachment=True, download_name="transcript.txt")
 
-if __name__ == "__main__":
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    app.run(debug=True)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        filename = 'audio.mp3' if format_type == 'mp3' else 'video.mp4'
+        return send_file(filename, as_attachment=True)
+
+    except Exception as e:
+        return f"Erro ao processar o download: {str(e)}"
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=10000)

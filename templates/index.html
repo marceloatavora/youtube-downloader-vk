@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>VK YouTube Downloader</title>
+  <title>YouTube Downloader</title>
 </head>
-<body style="font-family: Arial; text-align: center; padding: 50px;">
-    <h1>VK YouTube Downloader</h1>
-    <form method="POST">
-        <input name="url" placeholder="Cole o link do vídeo" style="width: 300px; padding: 8px;" required>
-        <br><br>
-        <button name="action" value="mp3" type="submit">🔊 Baixar MP3</button>
-        <button name="action" value="hd" type="submit">🎬 Baixar em HD</button>
-        <button name="action" value="max" type="submit">📼 Qualidade Máxima</button>
-        <button name="action" value="transcript" type="submit">📝 Transcrição</button>
-    </form>
+<body>
+  <h2>VK YouTube Downloader</h2>
+  <form action="/download" method="post">
+    <input type="text" name="url" placeholder="Cole o link do YouTube aqui" required>
+    <select name="format">
+      <option value="mp3">Áudio (MP3)</option>
+      <option value="video">Vídeo (HD)</option>
+      <option value="transcript">Transcrição</option>
+    </select>
+    <button type="submit">Baixar</button>
+  </form>
 </body>
 </html>
